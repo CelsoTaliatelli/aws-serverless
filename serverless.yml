@@ -20,13 +20,13 @@ plugins:
 
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
-frameworkVersion: '3'
+frameworkVersion: "3"
 
 provider:
   name: aws
   runtime: nodejs12.x
 
-# you can overwrite defaults here
+  # you can overwrite defaults here
   stage: dev
   region: us-east-1
 
@@ -43,3 +43,18 @@ functions:
       - http:
           path: pacientes/{pacienteId}
           method: get
+
+resources:
+  Resources:
+    PacientesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        KeySchema:
+          - AttributeName: paciente_id
+            KeyType: HASH
+        AttributeDefinitions:
+          - AttributeName: paciente_id
+            AttributeType: S
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
