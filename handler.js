@@ -13,7 +13,7 @@ const { v4: uuidv4 } = require('uuid');
 
 const dynamoDb = new AWS.DynamoDB.DocumentClient()
 const params = {
-  TableName: 'PACIENTES'
+  TableName: 'cadastro-pacientes-dev-PacientesTable-1PU3SPJEKICA'
 };
 
 module.exports.listarPacientes = async (event) => {
