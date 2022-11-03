@@ -6,7 +6,7 @@ const { v4: uuidv4 } = require('uuid');
 
 const dynamoDb = new AWS.DynamoDB.DocumentClient()
 const params = {
-  TableName: 'cadastro-pacientes-dev-PacientesTable-1PU3SPJEKICA'
+  TableName: 'cadastro-pacientes-dev-PacientesTable-1PU3SPJEKICA',
 };
 
 module.exports.listarPacientes = async (event) => {
@@ -121,12 +121,11 @@ module.exports.atualizarPaciente = async (event) => {
 
     await dynamoDb.update({
       ...params,
-      key: {
+      Key: {
         paciente_id:pacienteId
       },
       UpdateExpression:
-      'SET nome = :nome, data_nascimento = :dt, email = :email' +
-      'telefone = :telefone, atualizado_em = :atualizado_em',
+      'SET nome = :nome, data_nascimento = :dt, email = :email ,telefone = :telefone, atualizado_em = :atualizado_em', 
       ConditionExpression: 'attribute_exists(paciente_id)',
       ExpressionAttributeValues: {
         ':nome':nome,
@@ -140,6 +139,33 @@ module.exports.atualizarPaciente = async (event) => {
       statusCode: 204
     }
   } catch (err) {
+    console.log("Error", err);
+    return {
+      statusCode: err.statusCode ? err.statusCode : 500,
+      body: JSON.stringify({
+        error: err.name ? err.name : "Exception",
+        message: err.message ? err.message : "Unknown error",
+      }),
+    };
+  }
+}
+
+module.exports.excluirPaciente =  async event => {
+  const { pacienteId } = event.pathParameters
+  console.log(pacienteId)
+  try {
+    await dynamoDb.delete({
+      ...params,
+      Key:{
+        paciente_id:pacienteId
+      },
+      ConditionExpression: 'attribute_exists(paciente_id)'
+    }).promise()
+    return {
+      statusCode: 204
+    }
+  } catch (err) {
+
     console.log("Error", err);
     return {
       statusCode: err.statusCode ? err.statusCode : 500,
