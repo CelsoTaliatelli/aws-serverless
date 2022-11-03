@@ -38,6 +38,7 @@ provider:
         - dynamodb:PutItem
         - dynamodb:DeleteItem
         - dynamodb:GetItem
+        - dynamodb:UpdateItem
       Resource: arn:aws:dynamodb:us-east-1:934883325904:table/cadastro-pacientes-dev-PacientesTable-1PU3SPJEKICA
 
 
@@ -54,6 +55,12 @@ functions:
       - http:
           path: pacientes/{pacienteId}
           method: get
+  atualizarPaciente:
+    handler: handler.atualizarPaciente
+    events:
+      - http:
+          path: pacientes/{pacienteId}
+          method: put
 
 resources:
   Resources:

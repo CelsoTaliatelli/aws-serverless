@@ -1,12 +1,5 @@
 'use strict';
 
-const pacientes = [
-
-  { id: 1, nome: "Maria", idade: 20 },
-  { id: 2, nome: "Joao", idade: 30 },
-  { id: 3, nome: "Jose", idade: 45 }
-
-];
 
 const AWS = require('aws-sdk');
 const { v4: uuidv4 } = require('uuid');
@@ -116,3 +109,44 @@ module.exports.cadastrarPaciente = async (event) => {
     };
   }
 };
+
+
+module.exports.atualizarPaciente = async (event) => {
+  const { pacienteId } = event.pathParameters;
+
+  try {
+    const timestamp = new Date().getTime();
+    let dados = JSON.parse(event.body);
+    const { nome, data_nascimento, email, telefone } = dados;
+
+    await dynamoDb.update({
+      ...params,
+      key: {
+        paciente_id:pacienteId
+      },
+      UpdateExpression:
+      'SET nome = :nome, data_nascimento = :dt, email = :email' +
+      'telefone = :telefone, atualizado_em = :atualizado_em',
+      ConditionExpression: 'attribute_exists(paciente_id)',
+      ExpressionAttributeValues: {
+        ':nome':nome,
+        ':dt':data_nascimento,
+        ':email':email,
+        ':telefone':telefone,
+        ':atualizado_em':timestamp
+      }
+    }).promise();
+    return {
+      statusCode: 204
+    }
+  } catch (err) {
+    console.log("Error", err);
+    return {
+      statusCode: err.statusCode ? err.statusCode : 500,
+      body: JSON.stringify({
+        error: err.name ? err.name : "Exception",
+        message: err.message ? err.message : "Unknown error",
+      }),
+    };
+  }
+}
