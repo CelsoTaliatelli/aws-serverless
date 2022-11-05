@@ -4,29 +4,71 @@
 const AWS = require('aws-sdk');
 const { v4: uuidv4 } = require('uuid');
 
-const dynamoDb = new AWS.DynamoDB.DocumentClient()
+const dynamoDbOfflineOptions = {
+  region: "localhost",
+  endpoint: "http://localhost:8000"
+}
+
+const isOffline = () => process.env.IS_OFFLINE;
+
+const dynamoDb = isOffline()
+  ? new AWS.DynamoDB.DocumentClient(dynamoDbOfflineOptions)
+  : new AWS.DynamoDB.DocumentClient();
+
 const params = {
   TableName: 'cadastro-pacientes-dev-PacientesTable-1PU3SPJEKICA',
 };
 
 module.exports.listarPacientes = async (event) => {
 
-  try {
-    let data = await dynamoDb.scan(params).promise();
+    // MySQL
+  // SELECT * FROM table LIMIT 10 OFFSET 21
+  // DynamoDB
+  // Limit = LIMIT, ExclusiveStartKey = OFFSET e LastEvaluatedKey = "Numero da Pagina"
 
+  try {
+    const queryString = {
+      limit: 5,
+      ...event.queryStringParameters
+    }
+    
+    const { limit, next } = queryString
+    
+    let localParams = {
+      ...params,
+      Limit: limit
+    }
+    
+    if (next) {
+      localParams.ExclusiveStartKey = {
+        paciente_id: next
+      }
+    }
+    
+    let data = await dynamoDb.scan(localParams).promise();
+    
+    let nextToken = data.LastEvaluatedKey != undefined
+      ? data.LastEvaluatedKey.paciente_id 
+      : null;
+    
+    const result = {
+      items: data.Items,
+      next_token: nextToken
+    }
+    
     return {
       statusCode: 200,
-      body: JSON.stringify(data),
-    }
+      body: JSON.stringify(result),
+    };
   } catch (err) {
     console.log("Error", err);
     return {
       statusCode: err.statusCode ? err.statusCode : 500,
       body: JSON.stringify({
-        error: err.name ? err.name : "Exception", 
+        error: err.name ? err.name : "Exception",
         message: err.message ? err.message : "Unknown error",
-      })
-    }
+      }),
+    };
   }
   
 };
